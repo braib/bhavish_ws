@@ -7,13 +7,13 @@ from ament_index_python.packages import get_package_share_directory
 import os
 
 def generate_launch_description():
-    # Path to URDF file
+
     urdf_path = os.path.join(
         get_package_share_directory('bot_description'),
         'urdf', 'my_robot.urdf.xacro'
     )
 
-    # Launch the robot_state_publisher
+
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -22,14 +22,13 @@ def generate_launch_description():
         }]
     )
 
-    # Include Gazebo Harmonic (ros_gz_sim) launch file
+
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             os.path.join(get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py')
         ])
     )
 
-    # Spawn robot in Gazebo Harmonic using ros_gz's `create` service
     spawn_robot = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
@@ -38,7 +37,6 @@ def generate_launch_description():
     )
 
 
-    # Return the launch description
     return LaunchDescription([
         robot_state_publisher_node,
         gazebo_launch,

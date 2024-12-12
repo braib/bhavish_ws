@@ -1,23 +1,19 @@
-from ament_index_python import get_package_share_directory
 import launch
 from launch.substitutions import Command, LaunchConfiguration
 import launch_ros
-from launch_ros.actions import Node
 import os
-
+from ament_index_python import get_package_share_directory
 
 def generate_launch_description():
-
-
     pkg_share = launch_ros.substitutions.FindPackageShare(package='bot_description').find('bot_description')
+    pkg_share_rviz = launch_ros.substitutions.FindPackageShare(package='bot_control_cpp').find('bot_control_cpp')
+
     default_model_path = os.path.join(pkg_share, 'urdf/my_robot.urdf.xacro')
-    default_rviz_config_path = os.path.join(pkg_share, 'rviz/config.rviz')
-    
-    # world_path= os.path.join(get_package_share_directory('ttb_description'), 'models/worlds/house_env.world'),
+    default_rviz_config_path = os.path.join(pkg_share_rviz, 'rviz/config.rviz')
+
     world_path=os.path.join(get_package_share_directory('bot_world'), 'worlds/home1.world')
     
-    use_sim_time = LaunchConfiguration('use_sim_time')
-
+    
     robot_state_publisher_node = launch_ros.actions.Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -45,14 +41,20 @@ def generate_launch_description():
     )
 
 
-    spawn_entity = launch_ros.actions.Node(
-        package='gazebo_ros',
-        executable='spawn_entity.py',
-        arguments=['-entity', 'my_robot', '-topic', 'robot_description'],
-        output='screen'
+    filtered_scan = launch_ros.actions.Node(
+        package='bot_control_cpp',  
+        executable='reading_laser', 
+        name='reading_laser_node',  
+        output='screen', 
     )
 
 
+    spawn_entity = launch_ros.actions.Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        arguments=['-entity', 'my_first_robot', '-topic', 'robot_description'],
+        output='screen'
+    )
 
     return launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument(name='model', default_value=default_model_path,
@@ -60,11 +62,11 @@ def generate_launch_description():
         launch.actions.DeclareLaunchArgument(name='rvizconfig', default_value=default_rviz_config_path,
                                             description='Absolute path to rviz config file'),
         launch.actions.ExecuteProcess(cmd=['gazebo', '--verbose', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so', world_path], output='screen'),
-        launch.actions.DeclareLaunchArgument(name='use_sim_time', default_value='True',
-                                description='Flag to enable use_sim_time'),
         joint_state_publisher_node,
         joint_state_publisher_gui_node,
         robot_state_publisher_node,
         spawn_entity,
+        filtered_scan,
         rviz_node
     ])
+
